@@ -40,3 +40,16 @@ export const deleteAluno = async (id) => {
     throw error;
   }
 };
+
+// Adiciona isso dentro do AlunoService
+
+const atualizarAluno = async (id, aluno) => {
+  const response = await axios.put(`${API_URL}/alunos/${id}/`, aluno);
+  return response.data;
+};
+
+export default {
+  listarAlunos,
+  criarAluno,
+  atualizarAluno, // Adiciona aqui
+};
