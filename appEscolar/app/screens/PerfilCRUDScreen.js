@@ -1,142 +1,85 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Button, FlatList, StyleSheet } from 'react-native';
-import {
-  getProfessores,
-  createProfessor,
-  updateProfessor,
-  deleteProfessor,
-} from '../services/ProfessorService';
+import PerfilService from '../services/PerfilService';
 
-export default function ProfessorCRUDScreen() {
-  const [professores, setProfessores] = useState([]);
+const PerfilCRUDScreen = () => {
+  const [perfis, setPerfis] = useState([]);
   const [nome, setNome] = useState('');
-  const [cpf, setCpf] = useState('');
-  const [email, setEmail] = useState('');
-  const [formacao, setFormacao] = useState('');
-  const [areaAtuacao, setAreaAtuacao] = useState('');
+  const [descricao, setDescricao] = useState('');
   const [editandoId, setEditandoId] = useState(null);
 
-  useEffect(() => {
-    carregarProfessores();
-  }, []);
-
-  const carregarProfessores = async () => {
-    try {
-      const data = await getProfessores();
-      setProfessores(data);
-    } catch (error) {
-      console.error('Erro ao carregar professores:', error);
-    }
+  const carregarPerfis = async () => {
+    const dados = await PerfilService.listar();
+    setPerfis(dados);
   };
 
-  const limparCampos = () => {
+  const salvar = async () => {
+    const perfil = { nome, descricao };
+    if (editandoId) {
+      await PerfilService.atualizar(editandoId, perfil);
+      setEditandoId(null);
+    } else {
+      await PerfilService.criar(perfil);
+    }
     setNome('');
-    setCpf('');
-    setEmail('');
-    setFormacao('');
-    setAreaAtuacao('');
-    setEditandoId(null);
+    setDescricao('');
+    carregarPerfis();
   };
 
-  const salvarProfessor = async () => {
-    const novoProfessor = {
-      nome,
-      cpf,
-      email,
-      formacao,
-      area_atuacao: areaAtuacao,
-    };
-
-    try {
-      if (editandoId) {
-        await updateProfessor(editandoId, novoProfessor);
-      } else {
-        await createProfessor(novoProfessor);
-      }
-      limparCampos();
-      carregarProfessores();
-    } catch (error) {
-      console.error('Erro ao salvar professor:', error);
-    }
+  const editar = (perfil) => {
+    setNome(perfil.nome);
+    setDescricao(perfil.descricao);
+    setEditandoId(perfil.id);
   };
 
-  const editar = (prof) => {
-    setNome(prof.nome);
-    setCpf(prof.cpf);
-    setEmail(prof.email);
-    setFormacao(prof.formacao);
-    setAreaAtuacao(prof.area_atuacao);
-    setEditandoId(prof.id);
+  const deletar = async (id) => {
+    await PerfilService.excluir(id);
+    carregarPerfis();
   };
 
-  const excluir = async (id) => {
-    try {
-      await deleteProfessor(id);
-      carregarProfessores();
-    } catch (error) {
-      console.error('Erro ao excluir professor:', error);
-    }
-  };
+  useEffect(() => {
+    carregarPerfis();
+  }, []);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Cadastro de Professor</Text>
-
+      <Text style={styles.titulo}>Cadastro de Perfis</Text>
       <TextInput
-        style={styles.input}
         placeholder="Nome"
+        style={styles.input}
         value={nome}
         onChangeText={setNome}
       />
       <TextInput
+        placeholder="Descrição"
         style={styles.input}
-        placeholder="CPF"
-        value={cpf}
-        onChangeText={setCpf}
+        value={descricao}
+        onChangeText={setDescricao}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Formação"
-        value={formacao}
-        onChangeText={setFormacao}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Área de Atuação"
-        value={areaAtuacao}
-        onChangeText={setAreaAtuacao}
-      />
-
-      <Button title={editandoId ? "Atualizar" : "Cadastrar"} onPress={salvarProfessor} />
-
+      <Button title={editandoId ? "Atualizar" : "Cadastrar"} onPress={salvar} />
       <FlatList
-        data={professores}
+        data={perfis}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <View style={styles.item}>
-            <Text style={styles.itemText}>{item.nome} - {item.formacao}</Text>
-            <View style={styles.actions}>
+            <Text>{item.nome} - {item.descricao}</Text>
+            <View style={styles.botoes}>
               <Button title="Editar" onPress={() => editar(item)} />
-              <Button title="Excluir" color="red" onPress={() => excluir(item.id)} />
+              <Button title="Excluir" onPress={() => deletar(item.id)} />
             </View>
           </View>
         )}
       />
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#fff' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-  input: { borderWidth: 1, borderColor: '#ccc', marginBottom: 10, padding: 10, borderRadius: 5 },
-  item: { padding: 10, marginVertical: 5, borderWidth: 1, borderColor: '#ccc', borderRadius: 5 },
-  itemText: { fontSize: 16 },
-  actions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 },
+  container: { padding: 16 },
+  titulo: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
+  input: { borderWidth: 1, marginBottom: 8, padding: 8 },
+  item: { marginBottom: 12 },
+  botoes: { flexDirection: 'row', justifyContent: 'space-between' },
 });
+
+export default PerfilCRUDScreen;
