@@ -15,14 +15,12 @@ const PerfilCRUDScreen = () => {
 
   const salvar = async () => {
     const perfil = { nome, descricao };
-
     if (editandoId) {
       await PerfilService.atualizar(editandoId, perfil);
       setEditandoId(null);
     } else {
       await PerfilService.criar(perfil);
     }
-
     setNome('');
     setDescricao('');
     carregarPerfis();
