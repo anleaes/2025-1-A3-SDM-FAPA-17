@@ -1,93 +1,59 @@
-// Screens/NotaCRUDScreen.js
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TextInput, Button, StyleSheet } from 'react-native';
-import axios from 'axios';
+import { View, Text, TextInput, Button, FlatList, StyleSheet } from 'react-native';
+import NotaService from '../services/NotaService';
 
 export default function NotaCRUDScreen() {
   const [notas, setNotas] = useState([]);
-  const [novaNota, setNovaNota] = useState({
-    valor: '',
-    data_lancamento: '',
-    observacao: '',
-    aluno: '',
-    disciplina: ''
-  });
+  const [valor, setValor] = useState('');
+  const [dataLancamento, setDataLancamento] = useState('');
+  const [observacao, setObservacao] = useState('');
+  const [alunoId, setAlunoId] = useState('');
+  const [disciplinaId, setDisciplinaId] = useState('');
 
   useEffect(() => {
-    buscarNotas();
+    carregarNotas();
   }, []);
 
-  const buscarNotas = async () => {
-    try {
-      const response = await axios.get('http://localhost:8000/notas/');
-      setNotas(response.data);
-    } catch (error) {
-      console.error('Erro ao buscar notas:', error);
-    }
+  const carregarNotas = async () => {
+    const dados = await NotaService.listar();
+    setNotas(dados);
   };
 
   const adicionarNota = async () => {
-    try {
-      await axios.post('http://localhost:8000/notas/', novaNota);
-      buscarNotas();
-      setNovaNota({
-        valor: '',
-        data_lancamento: '',
-        observacao: '',
-        aluno: '',
-        disciplina: ''
-      });
-    } catch (error) {
-      console.error('Erro ao adicionar nota:', error);
-    }
+    const novaNota = {
+      valor,
+      data_lancamento: dataLancamento,
+      observacao,
+      aluno: alunoId,
+      disciplina: disciplinaId,
+    };
+    await NotaService.criar(novaNota);
+    carregarNotas();
+    setValor('');
+    setDataLancamento('');
+    setObservacao('');
+    setAlunoId('');
+    setDisciplinaId('');
   };
-
-  const renderItem = ({ item }) => (
-    <View style={styles.item}>
-      <Text>{item.aluno} - {item.valor} ({item.data_lancamento})</Text>
-      {item.observacao && <Text>Obs: {item.observacao}</Text>}
-    </View>
-  );
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Cadastro de Nota</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Valor"
-        value={novaNota.valor}
-        onChangeText={text => setNovaNota({ ...novaNota, valor: text })}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Data (YYYY-MM-DD)"
-        value={novaNota.data_lancamento}
-        onChangeText={text => setNovaNota({ ...novaNota, data_lancamento: text })}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Observação"
-        value={novaNota.observacao}
-        onChangeText={text => setNovaNota({ ...novaNota, observacao: text })}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Aluno"
-        value={novaNota.aluno}
-        onChangeText={text => setNovaNota({ ...novaNota, aluno: text })}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Disciplina"
-        value={novaNota.disciplina}
-        onChangeText={text => setNovaNota({ ...novaNota, disciplina: text })}
-      />
+
+      <TextInput placeholder="Valor" value={valor} onChangeText={setValor} style={styles.input} keyboardType="numeric" />
+      <TextInput placeholder="Data de Lançamento (AAAA-MM-DD)" value={dataLancamento} onChangeText={setDataLancamento} style={styles.input} />
+      <TextInput placeholder="Observação" value={observacao} onChangeText={setObservacao} style={styles.input} />
+      <TextInput placeholder="ID do Aluno" value={alunoId} onChangeText={setAlunoId} style={styles.input} />
+      <TextInput placeholder="ID da Disciplina" value={disciplinaId} onChangeText={setDisciplinaId} style={styles.input} />
+
       <Button title="Adicionar Nota" onPress={adicionarNota} />
+
       <FlatList
         data={notas}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={renderItem}
-        style={styles.list}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <Text style={styles.item}>{item.valor} - {item.aluno} ({item.data_lancamento})</Text>
+        )}
       />
     </View>
   );
@@ -95,7 +61,7 @@ export default function NotaCRUDScreen() {
 
 const styles = StyleSheet.create({
   container: { padding: 20 },
-  title: { fontSize: 24, marginBottom: 10 },
-  input: { borderWidth: 1, padding: 8, marginBottom: 10 },
-  item: { padding: 10, borderBottomWidth: 1 }
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 10 },
+  input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 10 },
+  item: { padding: 10, borderBottomWidth: 1, borderBottomColor: '#eee' },
 });
