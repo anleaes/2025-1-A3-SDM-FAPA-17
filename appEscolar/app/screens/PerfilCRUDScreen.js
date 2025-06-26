@@ -1,76 +1,87 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, Button, FlatList, StyleSheet } from 'react-native';
+import PerfilService from '../services/PerfilService';
 
-export default function PerfilCRUDScreen() {
-  const [perfil, setPerfil] = useState({ nome: '', tipo: '' });
+const PerfilCRUDScreen = () => {
   const [perfis, setPerfis] = useState([]);
+  const [nome, setNome] = useState('');
+  const [descricao, setDescricao] = useState('');
+  const [editandoId, setEditandoId] = useState(null);
 
-  const handleChange = (field, value) => {
-    setPerfil({ ...perfil, [field]: value });
+  const carregarPerfis = async () => {
+    const dados = await PerfilService.listar();
+    setPerfis(dados);
   };
 
-  const handleAdd = () => {
-    if (perfil.nome && perfil.tipo) {
-      setPerfis([...perfis, perfil]);
-      setPerfil({ nome: '', tipo: '' });
+  const salvar = async () => {
+    const perfil = { nome, descricao };
+
+    if (editandoId) {
+      await PerfilService.atualizar(editandoId, perfil);
+      setEditandoId(null);
+    } else {
+      await PerfilService.criar(perfil);
     }
+
+    setNome('');
+    setDescricao('');
+    carregarPerfis();
   };
+
+  const editar = (perfil) => {
+    setNome(perfil.nome);
+    setDescricao(perfil.descricao);
+    setEditandoId(perfil.id);
+  };
+
+  const deletar = async (id) => {
+    await PerfilService.excluir(id);
+    carregarPerfis();
+  };
+
+  useEffect(() => {
+    carregarPerfis();
+  }, []);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Cadastro de Perfis</Text>
-
+    <View style={styles.container}>
+      <Text style={styles.titulo}>Cadastro de Perfis</Text>
       <TextInput
-        style={styles.input}
         placeholder="Nome"
-        value={perfil.nome}
-        onChangeText={(text) => handleChange('nome', text)}
-      />
-
-      <TextInput
         style={styles.input}
-        placeholder="Tipo"
-        value={perfil.tipo}
-        onChangeText={(text) => handleChange('tipo', text)}
+        value={nome}
+        onChangeText={setNome}
       />
-
-      <Button title="Adicionar Perfil" onPress={handleAdd} />
-
-      <View style={styles.listContainer}>
-        {perfis.map((item, index) => (
-          <View key={index} style={styles.item}>
-            <Text>{item.nome} - {item.tipo}</Text>
+      <TextInput
+        placeholder="Descrição"
+        style={styles.input}
+        value={descricao}
+        onChangeText={setDescricao}
+      />
+      <Button title={editandoId ? "Atualizar" : "Cadastrar"} onPress={salvar} />
+      <FlatList
+        data={perfis}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.item}>
+            <Text>{item.nome} - {item.descricao}</Text>
+            <View style={styles.botoes}>
+              <Button title="Editar" onPress={() => editar(item)} />
+              <Button title="Excluir" onPress={() => deletar(item.id)} />
+            </View>
           </View>
-        ))}
-      </View>
-    </ScrollView>
+        )}
+      />
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    flexGrow: 1,
-    backgroundColor: '#f2f2f2',
-  },
-  title: {
-    fontSize: 24,
-    marginBottom: 20,
-    fontWeight: 'bold',
-  },
-  input: {
-    backgroundColor: '#fff',
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 5,
-  },
-  listContainer: {
-    marginTop: 20,
-  },
-  item: {
-    padding: 10,
-    backgroundColor: '#dcdcdc',
-    marginBottom: 5,
-    borderRadius: 5,
-  },
+  container: { padding: 16 },
+  titulo: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
+  input: { borderWidth: 1, marginBottom: 8, padding: 8 },
+  item: { marginBottom: 12 },
+  botoes: { flexDirection: 'row', justifyContent: 'space-between' },
 });
+
+export default PerfilCRUDScreen;
