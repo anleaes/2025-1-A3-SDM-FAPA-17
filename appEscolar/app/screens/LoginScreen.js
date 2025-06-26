@@ -1,16 +1,30 @@
-// app/screens/LoginScreen.js
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import axios from 'axios';
 
-export default function LoginScreen({ navigation }) {
-  const [login, setLogin] = useState('');
+export default function LoginScreen() {
+  const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const navigation = useNavigation();
 
-  const handleLogin = () => {
-    if (login && senha) {
-      navigation.navigate('Home');
-    } else {
-      alert('Preencha todos os campos!');
+  const handleLogin = async () => {
+    try {
+      const response = await axios.get('http://192.168.0.191:8000/usuarios/');
+
+      const usuarioEncontrado = response.data.find(
+        (usuario) => usuario.email === email && usuario.senha === senha
+      );
+
+      if (usuarioEncontrado) {
+        Alert.alert('Sucesso', 'Login realizado com sucesso!');
+        navigation.navigate('Home');
+      } else {
+        Alert.alert('Erro', 'E-mail ou senha inválidos');
+      }
+    } catch (error) {
+      console.error('Erro ao fazer login:', error);
+      Alert.alert('Erro', 'Não foi possível conectar à API.');
     }
   };
 
@@ -18,17 +32,19 @@ export default function LoginScreen({ navigation }) {
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
       <TextInput
-        placeholder="Login"
+        placeholder="Email"
         style={styles.input}
-        value={login}
-        onChangeText={setLogin}
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
       />
       <TextInput
         placeholder="Senha"
         style={styles.input}
-        secureTextEntry
         value={senha}
         onChangeText={setSenha}
+        secureTextEntry
       />
       <Button title="Entrar" onPress={handleLogin} />
     </View>
@@ -36,20 +52,7 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    justifyContent: 'center'
-  },
-  title: {
-    fontSize: 26,
-    marginBottom: 20,
-    textAlign: 'center'
-  },
-  input: {
-    borderWidth: 1,
-    padding: 10,
-    marginBottom: 12,
-    borderRadius: 6
-  }
+  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#fff' },
+  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  input: { borderWidth: 1, borderColor: '#ccc', marginBottom: 15, padding: 10, borderRadius: 5 },
 });
