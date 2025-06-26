@@ -1,83 +1,142 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, Button, FlatList, StyleSheet } from 'react-native';
+import {
+  getProfessores,
+  createProfessor,
+  updateProfessor,
+  deleteProfessor,
+} from '../services/ProfessorService';
 
 export default function ProfessorCRUDScreen() {
-  const [professor, setProfessor] = useState({ nome: '', email: '', disciplina: '' });
   const [professores, setProfessores] = useState([]);
+  const [nome, setNome] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [email, setEmail] = useState('');
+  const [formacao, setFormacao] = useState('');
+  const [areaAtuacao, setAreaAtuacao] = useState('');
+  const [editandoId, setEditandoId] = useState(null);
 
-  const handleChange = (field, value) => {
-    setProfessor({ ...professor, [field]: value });
+  useEffect(() => {
+    carregarProfessores();
+  }, []);
+
+  const carregarProfessores = async () => {
+    try {
+      const data = await getProfessores();
+      setProfessores(data);
+    } catch (error) {
+      console.error('Erro ao carregar professores:', error);
+    }
   };
 
-  const handleAdd = () => {
-    if (professor.nome && professor.email && professor.disciplina) {
-      setProfessores([...professores, professor]);
-      setProfessor({ nome: '', email: '', disciplina: '' });
+  const limparCampos = () => {
+    setNome('');
+    setCpf('');
+    setEmail('');
+    setFormacao('');
+    setAreaAtuacao('');
+    setEditandoId(null);
+  };
+
+  const salvarProfessor = async () => {
+    const novoProfessor = {
+      nome,
+      cpf,
+      email,
+      formacao,
+      area_atuacao: areaAtuacao,
+    };
+
+    try {
+      if (editandoId) {
+        await updateProfessor(editandoId, novoProfessor);
+      } else {
+        await createProfessor(novoProfessor);
+      }
+      limparCampos();
+      carregarProfessores();
+    } catch (error) {
+      console.error('Erro ao salvar professor:', error);
+    }
+  };
+
+  const editar = (prof) => {
+    setNome(prof.nome);
+    setCpf(prof.cpf);
+    setEmail(prof.email);
+    setFormacao(prof.formacao);
+    setAreaAtuacao(prof.area_atuacao);
+    setEditandoId(prof.id);
+  };
+
+  const excluir = async (id) => {
+    try {
+      await deleteProfessor(id);
+      carregarProfessores();
+    } catch (error) {
+      console.error('Erro ao excluir professor:', error);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Cadastro de Professores</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Cadastro de Professor</Text>
 
       <TextInput
         style={styles.input}
         placeholder="Nome"
-        value={professor.nome}
-        onChangeText={(text) => handleChange('nome', text)}
+        value={nome}
+        onChangeText={setNome}
       />
-
+      <TextInput
+        style={styles.input}
+        placeholder="CPF"
+        value={cpf}
+        onChangeText={setCpf}
+      />
       <TextInput
         style={styles.input}
         placeholder="Email"
-        value={professor.email}
-        onChangeText={(text) => handleChange('email', text)}
+        value={email}
+        onChangeText={setEmail}
       />
-
       <TextInput
         style={styles.input}
-        placeholder="Disciplina"
-        value={professor.disciplina}
-        onChangeText={(text) => handleChange('disciplina', text)}
+        placeholder="Formação"
+        value={formacao}
+        onChangeText={setFormacao}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Área de Atuação"
+        value={areaAtuacao}
+        onChangeText={setAreaAtuacao}
       />
 
-      <Button title="Adicionar Professor" onPress={handleAdd} />
+      <Button title={editandoId ? "Atualizar" : "Cadastrar"} onPress={salvarProfessor} />
 
-      <View style={styles.listContainer}>
-        {professores.map((item, index) => (
-          <View key={index} style={styles.item}>
-            <Text>{item.nome} - {item.email} - {item.disciplina}</Text>
+      <FlatList
+        data={professores}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.item}>
+            <Text style={styles.itemText}>{item.nome} - {item.formacao}</Text>
+            <View style={styles.actions}>
+              <Button title="Editar" onPress={() => editar(item)} />
+              <Button title="Excluir" color="red" onPress={() => excluir(item.id)} />
+            </View>
           </View>
-        ))}
-      </View>
-    </ScrollView>
+        )}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    flexGrow: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  title: {
-    fontSize: 24,
-    marginBottom: 20,
-    fontWeight: 'bold',
-  },
-  input: {
-    backgroundColor: '#fff',
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 5,
-  },
-  listContainer: {
-    marginTop: 20,
-  },
-  item: {
-    padding: 10,
-    backgroundColor: '#dcdcdc',
-    marginBottom: 5,
-    borderRadius: 5,
-  },
+  container: { flex: 1, padding: 20, backgroundColor: '#fff' },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
+  input: { borderWidth: 1, borderColor: '#ccc', marginBottom: 10, padding: 10, borderRadius: 5 },
+  item: { padding: 10, marginVertical: 5, borderWidth: 1, borderColor: '#ccc', borderRadius: 5 },
+  itemText: { fontSize: 16 },
+  actions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 },
 });
