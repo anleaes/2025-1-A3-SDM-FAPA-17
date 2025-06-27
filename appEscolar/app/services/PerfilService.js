@@ -1,5 +1,9 @@
 import api from './api';
+import axios from 'axios';
 
+const API_URL = 'http://192.168.0.191:8000/api/professores/';
+const listarProfessores = () => axios.get(API_URL);
+const criarProfessor = (professor) => axios.post(API_URL, professor);
 const endpoint = '/perfil/';
 
 const listar = async () => {

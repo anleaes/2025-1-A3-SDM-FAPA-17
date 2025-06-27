@@ -14,7 +14,7 @@ import CarrinhoMatriculaScreen from './screens/CarrinhoMatriculaScreen';
 import PerfilScreen from './screens/PerfilScreen';
 import UsuarioScreen from './screens/UsuarioScreen';
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator(); 
 
 export default function Navigation() {
   return (

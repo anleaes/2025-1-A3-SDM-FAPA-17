@@ -33,12 +33,6 @@ export default function Index() {
 }
 `;
 
-const layoutContent = `import { Stack } from "expo-router";
-
-export default function RootLayout() {
-  return <Stack />;
-}
-`;
 
 const rl = readline.createInterface({
   input: process.stdin,
